@@ -69,8 +69,14 @@ export default function Home() {
         <div className="flex flex-col justify-center px-8 sm:px-12 lg:px-24 py-12 order-2 lg:order-1">
           <div className="max-w-md w-full mx-auto space-y-8">
             <div className="space-y-4">
-              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold text-2xl shadow-lg">
-                P
+              <div className="relative w-16 h-16 mb-6">
+                <Image 
+                  src="https://neu.edu.ph/main/img/neu.png" 
+                  alt="NEU Logo" 
+                  fill 
+                  className="object-contain"
+                  priority
+                />
               </div>
               <h1 className="text-4xl font-headline font-extrabold tracking-tight text-foreground lg:text-5xl">
                 Page<span className="text-primary">Voyage</span>

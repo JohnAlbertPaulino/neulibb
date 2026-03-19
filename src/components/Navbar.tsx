@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { LogOut, LayoutDashboard, UserCheck } from "lucide-react";
 import { getCurrentUser, mockLogout } from "@/lib/auth-mock";
@@ -26,14 +27,21 @@ export default function Navbar() {
 
   return (
     <nav className="border-b bg-card sticky top-0 z-50">
-      <div className="max-w-7xl auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl">
-              P
-            </div>
-            <Link href="/" className="font-headline font-bold text-xl tracking-tight text-primary">
-              Page<span className="text-foreground">Voyage</span>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="relative w-8 h-8">
+                <Image 
+                  src="https://neu.edu.ph/main/img/neu.png" 
+                  alt="NEU Logo" 
+                  fill 
+                  className="object-contain"
+                />
+              </div>
+              <span className="font-headline font-bold text-xl tracking-tight text-primary">
+                Page<span className="text-foreground">Voyage</span>
+              </span>
             </Link>
           </div>
 
