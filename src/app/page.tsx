@@ -1,17 +1,18 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Mail, ArrowRight, Loader2 } from "lucide-react";
+import { ShieldCheck, Mail, ArrowRight, Loader2, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { mockLogin } from "@/lib/auth-mock";
+import { mockLogin, mockLogout } from "@/lib/auth-mock";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { useAuth, useUser } from "@/firebase";
-import { signInAnonymously } from "firebase/auth";
+import { signInAnonymously, signOut } from "firebase/auth";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -22,13 +23,6 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
   
   const heroImg = PlaceHolderImages.find(img => img.id === 'hero-campus');
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      const role = user.email?.startsWith('admin') ? 'ADMIN' : 'VISITOR';
-      router.push(role === 'ADMIN' ? "/dashboard" : "/check-in");
-    }
-  }, [user, isUserLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,15 +37,16 @@ export default function Home() {
 
     setLoading(true);
     try {
-      // For demo purposes, we use anonymous sign-in
       await signInAnonymously(auth);
-      // Mocking the user profile in our mock system too for role consistency
       mockLogin(email);
       
       toast({
         title: "Login Successful",
         description: `Welcome to PageVoyage!`,
       });
+      
+      const role = email.startsWith('admin') ? 'ADMIN' : 'VISITOR';
+      router.push(role === 'ADMIN' ? "/dashboard" : "/check-in");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -61,6 +56,15 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    mockLogout();
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out.",
+    });
   };
 
   return (
@@ -90,39 +94,63 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-primary" />
-                  Institutional Access
+                  {user ? "Welcome Back" : "Institutional Access"}
                 </CardTitle>
                 <CardDescription>
-                  Sign in with your @neu.edu.ph email to proceed.
+                  {user ? "You are currently signed in." : "Sign in with your @neu.edu.ph email to proceed."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      placeholder="student.name@neu.edu.ph"
-                      className="pl-10 h-12 rounded-lg"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                {isUserLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg"
-                    disabled={loading || isUserLoading}
-                  >
-                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Login with Institutional Account"}
-                    {!loading && <ArrowRight className="ml-2 w-5 h-5" />}
-                  </Button>
-                </form>
-                <div className="mt-6 text-center">
-                  <p className="text-xs text-muted-foreground">
-                    Try <b>admin@neu.edu.ph</b> for Admin Dashboard <br/> or <b>visitor@neu.edu.ph</b> for Check-in.
-                  </p>
-                </div>
+                ) : user ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-lg border text-sm">
+                      <p className="text-muted-foreground">Logged in as:</p>
+                      <p className="font-bold text-foreground truncate">{user.email || 'Anonymous User'}</p>
+                    </div>
+                    <Button 
+                      onClick={() => router.push(user.email?.startsWith('admin') ? "/dashboard" : "/check-in")}
+                      className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg"
+                    >
+                      Go to {user.email?.startsWith('admin') ? "Dashboard" : "Check-in"}
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                    <Button variant="ghost" onClick={handleSignOut} className="w-full gap-2 text-muted-foreground hover:text-destructive">
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="student.name@neu.edu.ph"
+                        className="pl-10 h-12 rounded-lg"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Login with Institutional Account"}
+                      {!loading && <ArrowRight className="ml-2 w-5 h-5" />}
+                    </Button>
+                    <div className="mt-6 text-center">
+                      <p className="text-xs text-muted-foreground">
+                        Try <b>admin@neu.edu.ph</b> for Admin Dashboard <br/> or <b>visitor@neu.edu.ph</b> for Check-in.
+                      </p>
+                    </div>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </div>
