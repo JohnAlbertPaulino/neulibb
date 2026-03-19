@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,15 +9,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Library, Building, CheckCircle2, Clock } from "lucide-react";
+import { Library, Building, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrentUser } from "@/lib/auth-mock";
 import { useRouter } from "next/navigation";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getCurrentUser } from "@/lib/auth-mock";
 
 export default function CheckInPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
+  const db = useFirestore();
+  const { user, isUserLoading } = useUser();
+  const [mockUser, setMockUser] = useState<any>(null);
+  
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -25,43 +31,51 @@ export default function CheckInPage() {
     department: "",
     reason: "",
     purposeCategory: "Inquiry",
+    visitorType: "Student",
     studentId: "",
   });
 
   useEffect(() => {
-    const u = getCurrentUser();
-    if (!u) router.push("/");
-    setUser(u);
-  }, [router]);
+    const mu = getCurrentUser();
+    if (!mu && !isUserLoading && !user) router.push("/");
+    setMockUser(mu);
+  }, [user, isUserLoading, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+    
     setLoading(true);
 
-    // Simulate database write
-    const newVisit = {
-      id: Math.random().toString(36).substring(7),
-      timestamp: new Date().toISOString(),
-      email: user?.email,
-      visitorName: user?.name,
-      facility,
-      status: "Waiting",
-      ...formData,
-    };
+    try {
+      await addDoc(collection(db, "visits"), {
+        userId: user.uid,
+        visitorName: mockUser?.name || user.email?.split('@')[0],
+        email: user.email,
+        visitorType: formData.visitorType,
+        department: formData.department,
+        facility,
+        reasonForVisit: formData.reason,
+        purposeCategory: facility === "Dean's Office" ? formData.purposeCategory : null,
+        status: "Waiting",
+        checkInTime: serverTimestamp(),
+        studentId: formData.studentId,
+      });
 
-    // Store in local storage to simulate backend for the dashboard to read
-    const visits = JSON.parse(localStorage.getItem('campusflow_visits') || '[]');
-    visits.push(newVisit);
-    localStorage.setItem('campusflow_visits', JSON.stringify(visits));
-
-    setTimeout(() => {
-      setLoading(false);
       setSubmitted(true);
       toast({
         title: `Welcome to NEU ${facility}!`,
         description: "Your visit has been recorded successfully.",
       });
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Check-in Failed",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -131,8 +145,20 @@ export default function CheckInPage() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" value={user?.name || ""} disabled />
+                      <Label htmlFor="visitorType">I am a...</Label>
+                      <Select 
+                        onValueChange={(v) => setFormData({...formData, visitorType: v})}
+                        defaultValue="Student"
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Student">Student</SelectItem>
+                          <SelectItem value="Teacher">Teacher (Employee)</SelectItem>
+                          <SelectItem value="Staff">Staff (Employee)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="id">Student/Employee ID (Optional)</Label>
@@ -199,7 +225,7 @@ export default function CheckInPage() {
                       className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
                       disabled={loading}
                     >
-                      {loading ? "Processing..." : "Submit Check-in"}
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Submit Check-in"}
                     </Button>
                     <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                       <Clock className="w-3 h-3" />

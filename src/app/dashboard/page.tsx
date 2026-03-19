@@ -5,7 +5,8 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Library, Building, BarChart4, Filter, Search, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, Library, Building, BarChart4, Filter, Search, Globe, Users2, Briefcase } from "lucide-react";
 import VisitorLog from "@/components/admin/VisitorLog";
 import UserManagement from "@/components/admin/UserManagement";
 import AIAnalytics from "@/components/admin/AIAnalytics";
@@ -14,38 +15,55 @@ import { Input } from "@/components/ui/input";
 import { getCurrentUser } from "@/lib/auth-mock";
 import { useRouter } from "next/navigation";
 import { isToday, isThisWeek, isThisMonth } from "date-fns";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, updateDoc, doc } from "firebase/firestore";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [visits, setVisits] = useState<any[]>([]);
+  const db = useFirestore();
+  
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  const visitsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, "visits"), orderBy("checkInTime", "desc"));
+  }, [db]);
+
+  const { data: visits = [], isLoading } = useCollection(visitsQuery);
+
   useEffect(() => {
     const user = getCurrentUser();
     if (!user || user.role !== 'ADMIN') router.push("/");
-
-    const storedVisits = JSON.parse(localStorage.getItem('campusflow_visits') || '[]');
-    setVisits(storedVisits);
   }, [router]);
 
   const updateVisitStatus = (id: string, newStatus: string) => {
-    const updated = visits.map(v => v.id === id ? { ...v, status: newStatus } : v);
-    setVisits(updated);
-    localStorage.setItem('campusflow_visits', JSON.stringify(updated));
+    const visitRef = doc(db, "visits", id);
+    updateDoc(visitRef, { status: newStatus });
   };
 
-  const filteredVisits = visits.filter(v => {
+  const filteredVisits = (visits || []).filter(v => {
     const matchesFacility = filter === "all" || v.facility === filter;
-    const matchesSearch = v.visitorName.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFacility && matchesSearch;
+    const matchesSearch = v.visitorName?.toLowerCase().includes(searchTerm.toLowerCase()) || v.reasonForVisit?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDept = deptFilter === "all" || v.department === deptFilter;
+    
+    let matchesType = true;
+    if (typeFilter === "Employee") {
+      matchesType = v.visitorType === "Teacher" || v.visitorType === "Staff";
+    } else if (typeFilter === "Student") {
+      matchesType = v.visitorType === "Student";
+    }
+
+    return matchesFacility && matchesSearch && matchesDept && matchesType;
   });
 
   const stats = {
-    total: visits.length,
-    today: visits.filter(v => isToday(new Date(v.timestamp))).length,
-    week: visits.filter(v => isThisWeek(new Date(v.timestamp))).length,
-    month: visits.filter(v => isThisMonth(new Date(v.timestamp))).length,
+    total: visits?.length || 0,
+    today: (visits || []).filter(v => v.checkInTime?.toDate && isToday(v.checkInTime.toDate())).length,
+    week: (visits || []).filter(v => v.checkInTime?.toDate && isThisWeek(v.checkInTime.toDate())).length,
+    month: (visits || []).filter(v => v.checkInTime?.toDate && isThisMonth(v.checkInTime.toDate())).length,
   };
 
   return (
@@ -61,7 +79,7 @@ export default function AdminDashboard() {
             <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Lookup visitor name..." 
+                placeholder="Search name or reason..." 
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -77,7 +95,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{stats.total}</div>
-              <p className="text-xs opacity-70 mt-1">Lifetime analytics</p>
+              <p className="text-xs opacity-70 mt-1">Live from Cloud</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-sm bg-card">
@@ -86,7 +104,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{stats.today}</div>
-              <p className="text-xs text-muted-foreground mt-1">Active current session</p>
+              <p className="text-xs text-muted-foreground mt-1">Active current sessions</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-sm bg-card">
@@ -126,30 +144,58 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="log" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-                <Filter className="w-4 h-4" /> Filter by:
-                <button 
-                  onClick={() => setFilter("all")}
-                  className={`px-3 py-1 rounded-full border transition-colors ${filter === "all" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
-                >
-                  All
-                </button>
-                <button 
-                  onClick={() => setFilter("Library")}
-                  className={`px-3 py-1 rounded-full border transition-colors ${filter === "Library" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
-                >
-                  Library
-                </button>
-                <button 
-                  onClick={() => setFilter("Dean's Office")}
-                  className={`px-3 py-1 rounded-full border transition-colors ${filter === "Dean's Office" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
-                >
-                  Dean's Office
-                </button>
+            <div className="flex flex-wrap gap-4 items-center bg-muted/20 p-4 rounded-lg border">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Facility:</span>
+                <div className="flex gap-1">
+                  {["all", "Library", "Dean's Office"].map((f) => (
+                    <button 
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`px-3 py-1 text-xs rounded-full border transition-colors ${filter === f ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Users2 className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Department:</span>
+                <Select value={deptFilter} onValueChange={setDeptFilter}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="All Colleges" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Colleges</SelectItem>
+                    <SelectItem value="CAS">CAS</SelectItem>
+                    <SelectItem value="CBA">CBA</SelectItem>
+                    <SelectItem value="CCMS">CCMS</SelectItem>
+                    <SelectItem value="CED">CED</SelectItem>
+                    <SelectItem value="COE">COE</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Type:</span>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Visitors</SelectItem>
+                    <SelectItem value="Student">Students Only</SelectItem>
+                    <SelectItem value="Employee">Employees Only</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <VisitorLog visits={filteredVisits} onUpdateStatus={updateVisitStatus} />
+
+            <VisitorLog visits={filteredVisits} onUpdateStatus={updateVisitStatus} isLoading={isLoading} />
           </TabsContent>
 
           <TabsContent value="sessions">

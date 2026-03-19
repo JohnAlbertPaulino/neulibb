@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,6 +8,7 @@ import { Sparkles, BarChart3, Loader2, TrendingUp, AlertCircle } from "lucide-re
 import { summarizeVisitorActivity } from "@/ai/flows/summarize-visitor-activity-flow";
 import { analyzeVisitorTrends } from "@/ai/flows/analyze-visitor-trends-flow";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 export default function AIAnalytics({ visitorData }: { visitorData: any[] }) {
   const [summary, setSummary] = useState<string | null>(null);
@@ -20,21 +22,21 @@ export default function AIAnalytics({ visitorData }: { visitorData: any[] }) {
       const result = await summarizeVisitorActivity({
         timeRange: "week",
         visitorData: visitorData.map(v => ({
-          timestamp: v.timestamp,
-          department: v.department,
-          reasonForVisit: v.reason,
-          facility: v.facility
+          timestamp: v.checkInTime?.toDate ? v.checkInTime.toDate().toISOString() : new Date().toISOString(),
+          department: v.department || "Unknown",
+          reasonForVisit: v.reasonForVisit || "N/A",
+          facility: v.facility || "Unknown"
         }))
       });
       setSummary(result.summary);
       
       const trendResult = await analyzeVisitorTrends({
         visitorRecords: visitorData.map(v => ({
-          timestamp: v.timestamp,
-          email: v.email,
-          department: v.department,
-          reasonForVisit: v.reason,
-          facility: v.facility as "Library" | "Dean's Office",
+          timestamp: v.checkInTime?.toDate ? v.checkInTime.toDate().toISOString() : new Date().toISOString(),
+          email: v.email || "unknown@neu.edu.ph",
+          department: v.department || "Unknown",
+          reasonForVisit: v.reasonForVisit || "N/A",
+          facility: (v.facility as "Library" | "Dean's Office") || "Library",
         }))
       });
       setTrends(trendResult.trends);

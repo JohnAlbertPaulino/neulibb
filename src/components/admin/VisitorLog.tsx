@@ -1,13 +1,14 @@
+
 "use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, User, Clock, CheckCircle, Timer } from "lucide-react";
+import { MoreHorizontal, User, Clock, CheckCircle, Timer, GraduationCap, Briefcase, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function VisitorLog({ visits, onUpdateStatus }: { visits: any[], onUpdateStatus: (id: string, status: string) => void }) {
+export default function VisitorLog({ visits, onUpdateStatus, isLoading }: { visits: any[], onUpdateStatus: (id: string, status: string) => void, isLoading?: boolean }) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Waiting": return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Waiting</Badge>;
@@ -17,13 +18,28 @@ export default function VisitorLog({ visits, onUpdateStatus }: { visits: any[], 
     }
   };
 
+  const getVisitorIcon = (type: string) => {
+    if (type === "Student") return <GraduationCap className="w-3 h-3 text-primary" />;
+    return <Briefcase className="w-3 h-3 text-accent" />;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-card gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Syncing visitor logs...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border bg-card overflow-hidden">
       <Table>
         <TableHeader className="bg-muted/50">
           <TableRow>
             <TableHead>Visitor</TableHead>
-            <TableHead>Department</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>College</TableHead>
             <TableHead>Facility</TableHead>
             <TableHead>Reason</TableHead>
             <TableHead>Time In</TableHead>
@@ -34,8 +50,8 @@ export default function VisitorLog({ visits, onUpdateStatus }: { visits: any[], 
         <TableBody>
           {visits.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                No visitor activity found for the selected range.
+              <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                No visitor activity found for the selected filters.
               </TableCell>
             </TableRow>
           ) : (
@@ -47,22 +63,32 @@ export default function VisitorLog({ visits, onUpdateStatus }: { visits: any[], 
                       <User className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="font-medium">{visit.visitorName}</p>
-                      <p className="text-xs text-muted-foreground">{visit.email}</p>
+                      <p className="font-medium text-xs sm:text-sm">{visit.visitorName}</p>
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">{visit.email}</p>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{visit.department}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="font-normal">{visit.facility}</Badge>
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
+                    {getVisitorIcon(visit.visitorType)}
+                    {visit.visitorType}
+                  </div>
                 </TableCell>
-                <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
-                  {visit.reason}
+                <TableCell>
+                  <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0">
+                    {visit.department}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="font-normal text-[10px]">{visit.facility}</Badge>
+                </TableCell>
+                <TableCell className="max-w-[150px] truncate text-[11px] text-muted-foreground">
+                  {visit.reasonForVisit}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5 text-xs">
                     <Clock className="w-3 h-3 text-muted-foreground" />
-                    {format(new Date(visit.timestamp), "h:mm a")}
+                    {visit.checkInTime?.toDate ? format(visit.checkInTime.toDate(), "h:mm a") : 'Just now'}
                   </div>
                 </TableCell>
                 <TableCell>{getStatusBadge(visit.status)}</TableCell>
