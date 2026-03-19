@@ -70,15 +70,32 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         
-        // Handle Session Lifecycle
+        // Handle Session Lifecycle & User Profile RBAC
         if (firebaseUser) {
+          const storedAuth = localStorage.getItem('pagevoyage_auth');
+          const mockUser = storedAuth ? JSON.parse(storedAuth) : null;
+          
+          // Use institutional email from mock auth to determine role
+          const userEmail = mockUser?.email || '';
+          const assignedRole = userEmail === 'jcesperanza@neu.edu.ph' ? 'ADMIN' : 'VISITOR';
+
+          // Sync User Profile in Firestore
+          setDoc(doc(firestore, 'users', firebaseUser.uid), {
+            id: firebaseUser.uid,
+            email: userEmail,
+            role: assignedRole,
+            isBlocked: false,
+            createdAt: serverTimestamp(),
+          }, { merge: true });
+
+          // Sync Session
           const sessionId = localStorage.getItem('active_session_id') || Math.random().toString(36).substring(7);
           localStorage.setItem('active_session_id', sessionId);
           
           setDoc(doc(firestore, 'user_sessions', sessionId), {
             id: sessionId,
             userId: firebaseUser.uid,
-            email: firebaseUser.email,
+            email: userEmail,
             loginTime: serverTimestamp(),
             isActive: true,
           }, { merge: true });

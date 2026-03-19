@@ -38,14 +38,14 @@ export default function Home() {
     setLoading(true);
     try {
       await signInAnonymously(auth);
-      mockLogin(email);
+      const mockUser = mockLogin(email);
       
       toast({
         title: "Login Successful",
         description: `Welcome to PageVoyage!`,
       });
       
-      const role = email.startsWith('admin') ? 'ADMIN' : 'VISITOR';
+      const role = email === 'jcesperanza@neu.edu.ph' ? 'ADMIN' : 'VISITOR';
       router.push(role === 'ADMIN' ? "/dashboard" : "/check-in");
     } catch (error: any) {
       toast({
@@ -66,6 +66,8 @@ export default function Home() {
       description: "You have been successfully signed out.",
     });
   };
+
+  const isUserAdmin = user && email === 'jcesperanza@neu.edu.ph';
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -108,14 +110,16 @@ export default function Home() {
                 ) : user ? (
                   <div className="space-y-4">
                     <div className="p-4 bg-muted/50 rounded-lg border text-sm">
-                      <p className="text-muted-foreground">Logged in as:</p>
-                      <p className="font-bold text-foreground truncate">{user.email || 'Anonymous User'}</p>
+                      <p className="text-muted-foreground">Session Active</p>
                     </div>
                     <Button 
-                      onClick={() => router.push(user.email?.startsWith('admin') ? "/dashboard" : "/check-in")}
+                      onClick={() => {
+                        const currentUser = JSON.parse(localStorage.getItem('pagevoyage_auth') || '{}');
+                        router.push(currentUser.role === 'ADMIN' ? "/dashboard" : "/check-in");
+                      }}
                       className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg"
                     >
-                      Go to {user.email?.startsWith('admin') ? "Dashboard" : "Check-in"}
+                      Go to Workspace
                       <ArrowRight className="ml-2 w-5 h-5" />
                     </Button>
                     <Button variant="ghost" onClick={handleSignOut} className="w-full gap-2 text-muted-foreground hover:text-destructive">
@@ -129,7 +133,7 @@ export default function Home() {
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="email"
-                        placeholder="student.name@neu.edu.ph"
+                        placeholder="institutional.email@neu.edu.ph"
                         className="pl-10 h-12 rounded-lg"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -146,7 +150,7 @@ export default function Home() {
                     </Button>
                     <div className="mt-6 text-center">
                       <p className="text-xs text-muted-foreground">
-                        Try <b>admin@neu.edu.ph</b> for Admin Dashboard <br/> or <b>visitor@neu.edu.ph</b> for Check-in.
+                        Use <b>jcesperanza@neu.edu.ph</b> for Administrator access.
                       </p>
                     </div>
                   </form>

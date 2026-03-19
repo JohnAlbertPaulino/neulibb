@@ -15,7 +15,9 @@ export const mockLogin = (email: string): User | null => {
     return null;
   }
 
-  const role: UserRole = email.startsWith('admin') ? 'ADMIN' : 'VISITOR';
+  // RBAC logic: Specific email is ADMIN, others are VISITOR
+  const role: UserRole = email === 'jcesperanza@neu.edu.ph' ? 'ADMIN' : 'VISITOR';
+  
   const user: User = {
     id: Math.random().toString(36).substring(7),
     name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
