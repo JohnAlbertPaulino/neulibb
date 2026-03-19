@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user account within the CampusFlow application.",
+      "description": "Represents a user account within the PageVoyage application.",
       "properties": {
         "id": {
           "type": "string",

@@ -1,10 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, UserCheck, ShieldAlert } from "lucide-react";
+import { LogOut, LayoutDashboard, UserCheck } from "lucide-react";
 import { getCurrentUser, mockLogout } from "@/lib/auth-mock";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/firebase";
@@ -27,14 +26,14 @@ export default function Navbar() {
 
   return (
     <nav className="border-b bg-card sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl">
-              C
+              P
             </div>
             <Link href="/" className="font-headline font-bold text-xl tracking-tight text-primary">
-              Campus<span className="text-foreground">Flow</span>
+              Page<span className="text-foreground">Voyage</span>
             </Link>
           </div>
 

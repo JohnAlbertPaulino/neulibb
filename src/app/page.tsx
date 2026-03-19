@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { mockLogin } from "@/lib/auth-mock";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { useAuth, useUser } from "@/firebase";
-import { signInAnonymously, updateEmail } from "firebase/auth";
+import { signInAnonymously } from "firebase/auth";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -44,14 +43,14 @@ export default function Home() {
 
     setLoading(true);
     try {
-      // For demo purposes, we use anonymous sign-in and link the email
-      const cred = await signInAnonymously(auth);
+      // For demo purposes, we use anonymous sign-in
+      await signInAnonymously(auth);
       // Mocking the user profile in our mock system too for role consistency
       mockLogin(email);
       
       toast({
         title: "Login Successful",
-        description: `Welcome to CampusFlow!`,
+        description: `Welcome to PageVoyage!`,
       });
     } catch (error: any) {
       toast({
@@ -71,10 +70,10 @@ export default function Home() {
           <div className="max-w-md w-full mx-auto space-y-8">
             <div className="space-y-4">
               <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold text-2xl shadow-lg">
-                C
+                P
               </div>
               <h1 className="text-4xl font-headline font-extrabold tracking-tight text-foreground lg:text-5xl">
-                Campus<span className="text-primary">Flow</span>
+                Page<span className="text-primary">Voyage</span>
               </h1>
               <p className="text-lg text-muted-foreground">
                 Institutional Visitor Management & Appointment Tracking for modern campuses.
@@ -109,7 +108,7 @@ export default function Home() {
                     className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg"
                     disabled={loading || isUserLoading}
                   >
-                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Login with Google"}
+                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Login with Institutional Account"}
                     {!loading && <ArrowRight className="ml-2 w-5 h-5" />}
                   </Button>
                 </form>

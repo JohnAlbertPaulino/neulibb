@@ -8,7 +8,7 @@ export interface User {
   isBlocked?: boolean;
 }
 
-const STORAGE_KEY = 'campusflow_auth';
+const STORAGE_KEY = 'pagevoyage_auth';
 
 export const mockLogin = (email: string): User | null => {
   if (!email.endsWith('@neu.edu.ph')) {
