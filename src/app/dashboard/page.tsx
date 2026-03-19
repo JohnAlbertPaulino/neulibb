@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -165,16 +164,22 @@ export default function AdminDashboard() {
                 <Users2 className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Department:</span>
                 <Select value={deptFilter} onValueChange={setDeptFilter}>
-                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectTrigger className="w-[160px] h-8 text-xs">
                     <SelectValue placeholder="All Colleges" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Colleges</SelectItem>
-                    <SelectItem value="CAS">CAS</SelectItem>
-                    <SelectItem value="CBA">CBA</SelectItem>
-                    <SelectItem value="CCMS">CCMS</SelectItem>
-                    <SelectItem value="CED">CED</SelectItem>
-                    <SelectItem value="COE">COE</SelectItem>
+                    <SelectItem value="CAS">CAS (Arts & Sciences)</SelectItem>
+                    <SelectItem value="CBA">CBA (Business)</SelectItem>
+                    <SelectItem value="CCMS">CCMS (CS)</SelectItem>
+                    <SelectItem value="CED">CED (Education)</SelectItem>
+                    <SelectItem value="COE">COE (Engineering)</SelectItem>
+                    <SelectItem value="CON">CON (Nursing)</SelectItem>
+                    <SelectItem value="COM">COM (Music)</SelectItem>
+                    <SelectItem value="CL">CL (Law)</SelectItem>
+                    <SelectItem value="CTHM">CTHM (Tourism)</SelectItem>
+                    <SelectItem value="CA">CA (Architecture)</SelectItem>
+                    <SelectItem value="CG">CG (Graduate Studies)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

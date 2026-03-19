@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -75,7 +74,7 @@ export default function CheckInPage() {
 
       setSubmitted(true);
       toast({
-        title: `Welcome to NEU ${facility}!`,
+        title: `Welcome to PageVoyage ${facility}!`,
         description: "Your visit has been recorded successfully.",
       });
     } catch (error: any) {
@@ -99,7 +98,7 @@ export default function CheckInPage() {
               <CheckCircle2 className="w-12 h-12" />
             </div>
           </div>
-          <h1 className="text-4xl font-headline font-bold text-foreground">Welcome to NEU {facility}!</h1>
+          <h1 className="text-4xl font-headline font-bold text-foreground">Welcome to PageVoyage {facility}!</h1>
           <p className="text-xl text-muted-foreground">
             Thank you for checking in. Your session has been automatically timestamped.
           </p>
@@ -194,6 +193,12 @@ export default function CheckInPage() {
                         <SelectItem value="CCMS">College of Computer Science</SelectItem>
                         <SelectItem value="CED">College of Education</SelectItem>
                         <SelectItem value="COE">College of Engineering</SelectItem>
+                        <SelectItem value="CON">College of Nursing</SelectItem>
+                        <SelectItem value="COM">College of Music</SelectItem>
+                        <SelectItem value="CL">College of Law</SelectItem>
+                        <SelectItem value="CTHM">College of Tourism & Hospitality</SelectItem>
+                        <SelectItem value="CA">College of Architecture</SelectItem>
+                        <SelectItem value="CG">College of Graduate Studies</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
