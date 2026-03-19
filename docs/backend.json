@@ -1,0 +1,279 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user account within the CampusFlow application, encompassing both visitors and administrators. This entity stores core user information required for authentication, role management, and personalized interactions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The institutional email address of the user (e.g., @neu.edu.ph), used for login and identification.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the system, defining their permissions and access levels.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "collegeDepartment": {
+          "type": "string",
+          "description": "The college department the user belongs to. Primarily for visitors to specify their affiliation."
+        },
+        "isBlocked": {
+          "type": "boolean",
+          "description": "Indicates if the user account is currently blocked from accessing the application by an administrator."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was initially created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last modification to the user account details.",
+          "format": "date-time"
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "Timestamp of the user's most recent successful login.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "role",
+        "isBlocked",
+        "createdAt"
+      ]
+    },
+    "Facility": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Facility",
+      "type": "object",
+      "description": "Represents a physical location or department within the institution where visitors can check in (e.g., Library, Dean's Office).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Facility entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The common name of the facility (e.g., 'Library', 'Dean\\'s Office')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description or additional details about the facility."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    "Visit": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Visit",
+      "type": "object",
+      "description": "Records details of a single instance of a user visiting a specific facility, including check-in/out times, purpose, and current status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Visit entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who made the visit. (Relationship: User 1:N Visit)"
+        },
+        "facilityId": {
+          "type": "string",
+          "description": "Reference to the Facility being visited. (Relationship: Facility 1:N Visit)"
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "Timestamp when the user checked into the facility.",
+          "format": "date-time"
+        },
+        "checkOutTime": {
+          "type": "string",
+          "description": "Timestamp when the user checked out of the facility. This field is null if the visit is still active.",
+          "format": "date-time"
+        },
+        "reasonForVisit": {
+          "type": "string",
+          "description": "The stated purpose or reason for the visit (e.g., 'Inquiry', 'Meeting', 'Research')."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the visitor within the facility log (e.g., 'Checked-in', 'Waiting', 'In-Meeting', 'Completed').",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "facilityId",
+        "checkInTime",
+        "reasonForVisit",
+        "status"
+      ]
+    },
+    "UserSession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserSession",
+      "type": "object",
+      "description": "Tracks active and past login sessions for users, providing real-time monitoring capabilities for the Admin dashboard.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserSession entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User associated with this session. (Relationship: User 1:N UserSession)"
+        },
+        "loginTime": {
+          "type": "string",
+          "description": "Timestamp when the user logged in and the session began.",
+          "format": "date-time"
+        },
+        "logoutTime": {
+          "type": "string",
+          "description": "Timestamp when the user logged out or the session ended. This field is null if the session is currently active.",
+          "format": "date-time"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Boolean flag indicating whether the user's session is currently active."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "loginTime",
+        "isActive"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores core user profile information. Access is restricted to the user themselves or global administrators. Includes denormalized 'isBlocked' and 'role' fields for direct access control.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user, corresponding to `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Denormalized collection for granting global administrative privileges. The existence of a document at this path signifies that the `userId` is an administrator, enabling 'existence over content' for authorization rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who has global admin privileges."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_facility_manager/{facilityId}/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Denormalized collection for granting management privileges for a specific facility. The existence of a document signifies `userId` has permissions for `facilityId`, enabling 'existence over content' for authorization rules without `get()` calls.",
+          "params": [
+            {
+              "name": "facilityId",
+              "description": "The unique ID of the facility being managed."
+            },
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who manages this specific facility."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/facilities/{facilityId}",
+        "definition": {
+          "entityName": "Facility",
+          "schema": {
+            "$ref": "#/backend/entities/Facility"
+          },
+          "description": "Stores details about physical locations or departments. Primarily read-only for authenticated users, with write access reserved for global administrators.",
+          "params": [
+            {
+              "name": "facilityId",
+              "description": "The unique ID of the facility."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/visits/{visitId}",
+        "definition": {
+          "entityName": "Visit",
+          "schema": {
+            "$ref": "#/backend/entities/Visit"
+          },
+          "description": "Records individual user visits to facilities. Includes denormalized 'userId' and 'facilityId' for authorization independence, allowing direct rule checks without `get()`. Visitors can create/update their own, while global admins and facility managers can read/update as per their roles.",
+          "params": [
+            {
+              "name": "visitId",
+              "description": "The unique ID of the visit."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/user_sessions/{sessionId}",
+        "definition": {
+          "entityName": "UserSession",
+          "schema": {
+            "$ref": "#/backend/entities/UserSession"
+          },
+          "description": "Tracks active and past login sessions for users. Includes denormalized 'userId' and 'isActive' for efficient querying and real-time updates for the admin dashboard. Supports authorization independence, allowing admins to query active sessions globally and users to manage their own.",
+          "params": [
+            {
+              "name": "sessionId",
+              "description": "The unique ID of the user session."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The proposed Firestore structure prioritizes secure, scalable, and debuggable authorization by strictly adhering to the core design principles. The primary strategy revolves around **Authorization Independence via Denormalization** and **Structural Segregation**, ensuring that security rules are straightforward and efficient, avoiding costly `get()` calls.\n\n1.  **Users (`/users/{userId}`):** This collection stores individual user profiles. Access is primarily path-based, where a user can only read or update their own profile (`request.auth.uid == userId`). An administrative role (`roles_admin`) will be granted broader update permissions (e.g., to block users).\n\n2.  **Global Roles (`/roles_admin/{userId}`):** To manage administrative access, a dedicated collection `/roles_admin` is used. The mere **existence** of a document at `/roles_admin/{request.auth.uid}` grants global administrator privileges. This adheres to DBAC, using 'existence over content' and avoiding custom claims or `get()` calls for role verification. Admins have broad read/write access to most collections.\n\n3.  **Facility-Specific Roles (`/roles_facility_manager/{facilityId}/{userId}`):** For staff like Deans or Secretaries who manage specific facilities (e.g., a Dean's Office), this collection provides fine-grained, facility-level authorization. The existence of a document here indicates that `userId` is authorized to manage `facilityId`. This pattern enables rules to check `exists(/roles_facility_manager/$(resource.data.facilityId)/$(request.auth.uid))` without requiring `get()`, maintaining Authorization Independence.\n\n4.  **Facilities (`/facilities/{facilityId}`):** This collection stores static information about institutional facilities. It's generally readable by all authenticated users for lookup purposes but writeable only by global administrators.\n\n5.  **Visits (`/visits/{visitId}`):** This collection records each user's visit to a facility. Crucially, each `Visit` document **denormalizes** `userId` and `facilityId`. This is vital for Authorization Independence and QAPs. Rules can directly compare `request.auth.uid` with `resource.data.userId` for visitor self-management (e.g., checking out) or check `exists(/roles_admin/$(request.auth.uid))` or `exists(/roles_facility_manager/$(resource.data.facilityId)/$(request.auth.uid))` for staff/admin access. This enables secure queries (QAPs) for listings like \"all visits for this facility today\" or \"all my past visits\" without leaking unauthorized data.\n\n6.  **User Sessions (`/user_sessions/{sessionId}`):** As explicitly requested for the Admin dashboard, this collection tracks active and past user sessions. Each `UserSession` document **denormalizes** `userId` and includes an `isActive` boolean. This denormalization is critical for Authorization Independence: rules can verify `request.auth.uid == resource.data.userId` for users managing their own session (on login/logout) and `exists(/roles_admin/$(request.auth.uid))` for admin access. The `isActive` field is key for the real-time Admin dashboard. Administrators can securely query `user_sessions.where('isActive', '==', true)` and receive real-time updates via `onSnapshot`, as the rules will explicitly permit this `list` operation only if `request.auth.uid` corresponds to an admin role. This ensures QAPs are met, as the client's query is fully authorized at the rule level, preventing data leakage."
+  }
+}

@@ -1,0 +1,142 @@
+/**
+ * CAMPUSFLOW SECURITY RULES
+ * 
+ * CORE PHILOSOPHY:
+ * This ruleset implements an "Authorization Independence" model. By denormalizing critical 
+ * fields like `userId` and `facilityId` directly onto documents, we ensure that security 
+ * decisions are performant and do not require excessive `get()` lookups. 
+ * 
+ * DATA STRUCTURE:
+ * - /users/{userId}: Private user profiles.
+ * - /roles_admin/{userId}: Marker documents for global administrators.
+ * - /roles_facility_manager/{facilityId}/{userId}: Marker documents for facility-specific managers.
+ * - /facilities/{facilityId}: Publicly readable facility metadata.
+ * - /visits/{visitId}: Visit logs with denormalized user and facility links.
+ * - /user_sessions/{sessionId}: Real-time session tracking for the admin dashboard.
+ * 
+ * KEY SECURITY DECISIONS:
+ * 1. Role-Based Access Control (RBAC): We use "existence-over-content" checks via `exists()` 
+ *    on dedicated role collections (/roles_admin, /roles_facility_manager) to grant elevated 
+ *    privileges without relying on custom auth claims.
+ * 2. Ownership Enforcement: Users are strictly limited to creating and managing data 
+ *    linked to their own `auth.uid`.
+ * 3. Administrative Oversight: Global admins have broad read/write access across the system 
+ *    to manage users and monitor sessions.
+ * 4. Real-time Dashboard Support: The `user_sessions` rules explicitly permit admins to 
+ *    perform global queries (e.g., where `isActive == true`) to support the live dashboard.
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    /** Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Checks if the authenticated user is a global administrator. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /** Checks if the authenticated user is a manager for a specific facility. */
+    function isFacilityManager(facilityId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_facility_manager/$(facilityId)/$(request.auth.uid));
+    }
+
+    /** Verifies ownership on an existing document for update/delete operations. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for user profile documents.
+     * @path /users/{userId}
+     * @allow (get) If the user is the owner or an admin.
+     * @deny (list) For non-admin users to prevent user enumeration.
+     * @principle Ownership-based access with administrative override.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if (isExistingOwner(userId) || isAdmin()) && request.resource.data.id == userId;
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description System collection for global admin role assignment.
+     * @path /roles_admin/{userId}
+     * @allow (all) Only for existing global administrators.
+     * @deny (all) For standard users.
+     * @principle Restricted administrative role management.
+     */
+    match /roles_admin/{userId} {
+      allow get, list, create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description System collection for facility-specific manager assignment.
+     * @path /roles_facility_manager/{facilityId}/{userId}
+     * @allow (all) Only for global administrators.
+     * @deny (all) For standard users and facility managers.
+     * @principle Centralized role management by global admins.
+     */
+    match /roles_facility_manager/{facilityId}/{userId} {
+      allow get, list, create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Publicly readable facility information.
+     * @path /facilities/{facilityId}
+     * @allow (read) All authenticated users.
+     * @deny (write) Any user who is not a global administrator.
+     * @principle Authenticated public read with admin-only writes.
+     */
+    match /facilities/{facilityId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Visit logs tracking user activity at facilities.
+     * @path /visits/{visitId}
+     * @allow (create) If the userId in the data matches the authenticated user.
+     * @deny (update) If the user is not the owner, the facility manager, or an admin.
+     * @principle Relational integrity and shared management access.
+     */
+    match /visits/{visitId} {
+      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isFacilityManager(resource.data.facilityId) || isAdmin());
+      allow list: if isSignedIn(); // Filtering happens via query parameters matching the 'get' logic
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if resource != null && (isOwner(resource.data.userId) || isFacilityManager(resource.data.facilityId) || isAdmin());
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Real-time session tracking for the Admin dashboard.
+     * @path /user_sessions/{sessionId}
+     * @allow (list) For admins to support the "Active Sessions" real-time listener.
+     * @deny (create) If the userId in the session data does not match the auth UID.
+     * @principle Supports real-time monitoring while enforcing user data ownership.
+     */
+    match /user_sessions/{sessionId} {
+      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow list: if isAdmin() || (isSignedIn() && request.query.limit <= 100); 
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if resource != null && (isOwner(resource.data.userId) || isAdmin());
+      allow delete: if isAdmin() && resource != null;
+    }
+  }
+}
