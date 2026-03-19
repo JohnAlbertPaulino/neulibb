@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, Firestore } from "firebase/firestore";
+import { collection, query, where, orderBy, limit } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Monitor, Smartphone, Globe, Clock, User } from "lucide-react";
@@ -17,7 +16,8 @@ export default function ActiveSessions() {
     return query(
       collection(db, "user_sessions"),
       where("isActive", "==", true),
-      orderBy("loginTime", "desc")
+      orderBy("loginTime", "desc"),
+      limit(100)
     );
   }, [db]);
 

@@ -8,22 +8,18 @@
  * 
  * DATA STRUCTURE:
  * - /users/{userId}: Private user profiles.
- * - /roles_admin/{userId}: Marker documents for global administrators.
- * - /roles_facility_manager/{facilityId}/{userId}: Marker documents for facility-specific managers.
- * - /facilities/{facilityId}: Publicly readable facility metadata.
  * - /visits/{visitId}: Visit logs with denormalized user and facility links.
  * - /user_sessions/{sessionId}: Real-time session tracking for the admin dashboard.
  * 
  * KEY SECURITY DECISIONS:
- * 1. Role-Based Access Control (RBAC): We use "existence-over-content" checks via `exists()` 
- *    on dedicated role collections (/roles_admin, /roles_facility_manager) to grant elevated 
- *    privileges without relying on custom auth claims.
+ * 1. Role-Based Access Control (RBAC): We check the 'role' field in the /users/{userId} document
+ *    to grant administrative privileges.
  * 2. Ownership Enforcement: Users are strictly limited to creating and managing data 
  *    linked to their own `auth.uid`.
  * 3. Administrative Oversight: Global admins have broad read/write access across the system 
  *    to manage users and monitor sessions.
- * 4. Real-time Dashboard Support: The `user_sessions` rules explicitly permit admins to 
- *    perform global queries (e.g., where `isActive == true`) to support the live dashboard.
+ * 4. Real-time Dashboard Support: The `user_sessions` rules permit admins and limited-query users
+ *    to perform global queries to support the live dashboard.
  */
 
 rules_version = '2';
@@ -42,14 +38,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** Checks if the authenticated user is a global administrator. */
+    /** Checks if the authenticated user is a global administrator based on their user profile. */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "ADMIN";
     }
 
     /** Checks if the authenticated user is a manager for a specific facility. */
+    // Note: Facility management currently relies on isAdmin for simplicity in this prototype
     function isFacilityManager(facilityId) {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_facility_manager/$(facilityId)/$(request.auth.uid));
+      return isAdmin();
     }
 
     /** Verifies ownership on an existing document for update/delete operations. */
@@ -62,9 +59,6 @@ service cloud.firestore {
     /**
      * @description Rules for user profile documents.
      * @path /users/{userId}
-     * @allow (get) If the user is the owner or an admin.
-     * @deny (list) For non-admin users to prevent user enumeration.
-     * @principle Ownership-based access with administrative override.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
@@ -75,33 +69,8 @@ service cloud.firestore {
     }
 
     /**
-     * @description System collection for global admin role assignment.
-     * @path /roles_admin/{userId}
-     * @allow (all) Only for existing global administrators.
-     * @deny (all) For standard users.
-     * @principle Restricted administrative role management.
-     */
-    match /roles_admin/{userId} {
-      allow get, list, create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description System collection for facility-specific manager assignment.
-     * @path /roles_facility_manager/{facilityId}/{userId}
-     * @allow (all) Only for global administrators.
-     * @deny (all) For standard users and facility managers.
-     * @principle Centralized role management by global admins.
-     */
-    match /roles_facility_manager/{facilityId}/{userId} {
-      allow get, list, create, update, delete: if isAdmin();
-    }
-
-    /**
      * @description Publicly readable facility information.
      * @path /facilities/{facilityId}
-     * @allow (read) All authenticated users.
-     * @deny (write) Any user who is not a global administrator.
-     * @principle Authenticated public read with admin-only writes.
      */
     match /facilities/{facilityId} {
       allow get, list: if isSignedIn();
@@ -112,24 +81,18 @@ service cloud.firestore {
     /**
      * @description Visit logs tracking user activity at facilities.
      * @path /visits/{visitId}
-     * @allow (create) If the userId in the data matches the authenticated user.
-     * @deny (update) If the user is not the owner, the facility manager, or an admin.
-     * @principle Relational integrity and shared management access.
      */
     match /visits/{visitId} {
-      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isFacilityManager(resource.data.facilityId) || isAdmin());
-      allow list: if isSignedIn(); // Filtering happens via query parameters matching the 'get' logic
+      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow list: if isSignedIn(); 
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if resource != null && (isOwner(resource.data.userId) || isFacilityManager(resource.data.facilityId) || isAdmin());
+      allow update: if resource != null && (isOwner(resource.data.userId) || isAdmin());
       allow delete: if isAdmin() && resource != null;
     }
 
     /**
      * @description Real-time session tracking for the Admin dashboard.
      * @path /user_sessions/{sessionId}
-     * @allow (list) For admins to support the "Active Sessions" real-time listener.
-     * @deny (create) If the userId in the session data does not match the auth UID.
-     * @principle Supports real-time monitoring while enforcing user data ownership.
      */
     match /user_sessions/{sessionId} {
       allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
