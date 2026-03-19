@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -7,7 +6,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Mail, ArrowRight, Loader2, LogOut } from "lucide-react";
+import { ShieldCheck, Mail, ArrowRight, Loader2, LogOut, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { mockLogin, mockLogout } from "@/lib/auth-mock";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -38,7 +37,7 @@ export default function Home() {
     setLoading(true);
     try {
       await signInAnonymously(auth);
-      const mockUser = mockLogin(email);
+      mockLogin(email);
       
       toast({
         title: "Login Successful",
@@ -67,15 +66,14 @@ export default function Home() {
     });
   };
 
-  const isUserAdmin = user && email === 'jcesperanza@neu.edu.ph';
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex-1 grid lg:grid-cols-2">
-        <div className="flex flex-col justify-center px-8 sm:px-12 lg:px-24 py-12 order-2 lg:order-1">
+        {/* Left Side: Login Form */}
+        <div className="flex flex-col justify-center px-8 sm:px-12 lg:px-24 py-12 order-2 lg:order-1 bg-background">
           <div className="max-w-md w-full mx-auto space-y-8">
             <div className="space-y-4">
-              <div className="relative w-16 h-16 mb-6">
+              <div className="relative w-20 h-20 mb-6">
                 <Image 
                   src="https://neu.edu.ph/main/img/neu.png" 
                   alt="NEU Logo" 
@@ -88,18 +86,18 @@ export default function Home() {
                 Page<span className="text-primary">Voyage</span>
               </h1>
               <p className="text-lg text-muted-foreground">
-                Institutional Visitor Management & Appointment Tracking for modern campuses.
+                Official Visitor Management System of <span className="font-semibold text-foreground">New Era University</span>.
               </p>
             </div>
 
-            <Card className="border-none shadow-xl bg-card">
+            <Card className="border-none shadow-2xl bg-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-primary" />
-                  {user ? "Welcome Back" : "Institutional Access"}
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <ShieldCheck className="w-6 h-6 text-primary" />
+                  {user ? "Session Active" : "Institutional Access"}
                 </CardTitle>
                 <CardDescription>
-                  {user ? "You are currently signed in." : "Sign in with your @neu.edu.ph email to proceed."}
+                  {user ? "Manage your campus activities." : "Sign in with your @neu.edu.ph email to proceed."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -109,9 +107,6 @@ export default function Home() {
                   </div>
                 ) : user ? (
                   <div className="space-y-4">
-                    <div className="p-4 bg-muted/50 rounded-lg border text-sm">
-                      <p className="text-muted-foreground">Session Active</p>
-                    </div>
                     <Button 
                       onClick={() => {
                         const currentUser = JSON.parse(localStorage.getItem('pagevoyage_auth') || '{}');
@@ -145,7 +140,7 @@ export default function Home() {
                       className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg"
                       disabled={loading}
                     >
-                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Login with Institutional Account"}
+                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Login to Portal"}
                       {!loading && <ArrowRight className="ml-2 w-5 h-5" />}
                     </Button>
                     <div className="mt-6 text-center">
@@ -157,10 +152,17 @@ export default function Home() {
                 )}
               </CardContent>
             </Card>
+            
+            <footer className="pt-8 text-center lg:text-left">
+              <p className="text-xs text-muted-foreground">
+                © {new Date().getFullYear()} New Era University. All rights reserved.
+              </p>
+            </footer>
           </div>
         </div>
 
-        <div className="relative hidden lg:block order-1 lg:order-2">
+        {/* Right Side: Hero Image and VMGO */}
+        <div className="relative hidden lg:flex flex-col justify-end p-12 order-1 lg:order-2 overflow-hidden">
           {heroImg && (
             <Image
               src={heroImg.imageUrl}
@@ -171,10 +173,51 @@ export default function Home() {
               data-ai-hint={heroImg.imageHint}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-          <div className="absolute bottom-12 left-12 right-12 text-white">
-            <h2 className="text-3xl font-bold font-headline drop-shadow-md">Modern, Professional, Academic.</h2>
-            <p className="text-lg opacity-90 drop-shadow-md">Unified visitor self-service portal for Library and Dean's Office.</p>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          
+          <div className="relative z-10 space-y-8 text-white max-w-lg">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-primary">
+                <Info className="w-5 h-5" />
+                <span className="text-sm font-bold uppercase tracking-widest">Our Foundation</span>
+              </div>
+              <h2 className="text-4xl font-extrabold font-headline leading-tight">New Era University VMGO</h2>
+            </div>
+
+            <div className="grid gap-6">
+              <section className="space-y-2">
+                <h3 className="text-lg font-bold text-primary flex items-center gap-2">
+                  <div className="w-1 h-6 bg-primary" />
+                  VISION
+                </h3>
+                <p className="text-sm leading-relaxed opacity-90 italic">
+                  "A world-class Institution of learning with a unique Christian culture of excellence, discipline, and service for humanity."
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-lg font-bold text-primary flex items-center gap-2">
+                  <div className="w-1 h-6 bg-primary" />
+                  MISSION
+                </h3>
+                <p className="text-sm leading-relaxed opacity-90 italic">
+                  "To provide quality education that will develop the students' full potential as God-fearing, responsible, and productive members of the society."
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-lg font-bold text-primary flex items-center gap-2">
+                  <div className="w-1 h-6 bg-primary" />
+                  GOALS & OBJECTIVES
+                </h3>
+                <ul className="text-xs leading-relaxed opacity-80 list-disc list-inside space-y-1">
+                  <li>Academic excellence and spiritual growth</li>
+                  <li>Inculcation of Christian values and moral discipline</li>
+                  <li>Community service and social responsibility</li>
+                  <li>Development of globally competitive skills</li>
+                </ul>
+              </section>
+            </div>
           </div>
         </div>
       </main>

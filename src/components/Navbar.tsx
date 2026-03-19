@@ -30,8 +30,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="relative w-8 h-8">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="relative w-10 h-10 transition-transform group-hover:scale-110">
                 <Image 
                   src="https://neu.edu.ph/main/img/neu.png" 
                   alt="NEU Logo" 
@@ -39,9 +39,12 @@ export default function Navbar() {
                   className="object-contain"
                 />
               </div>
-              <span className="font-headline font-bold text-xl tracking-tight text-primary">
-                Page<span className="text-foreground">Voyage</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="font-headline font-bold text-xl leading-none tracking-tight text-primary">
+                  Page<span className="text-foreground">Voyage</span>
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground tracking-tighter uppercase">New Era University</span>
+              </div>
             </Link>
           </div>
 
@@ -52,30 +55,30 @@ export default function Navbar() {
                   <Link href="/dashboard">
                     <Button variant="ghost" size="sm" className="gap-2">
                       <LayoutDashboard className="w-4 h-4" />
-                      <span className="hidden sm:inline">Dashboard</span>
+                      <span className="hidden sm:inline">Admin Console</span>
                     </Button>
                   </Link>
                 )}
                 <Link href="/check-in">
                   <Button variant="ghost" size="sm" className="gap-2">
                     <UserCheck className="w-4 h-4" />
-                    <span className="hidden sm:inline">Check-in</span>
+                    <span className="hidden sm:inline">Log Visit</span>
                   </Button>
                 </Link>
                 <div className="h-6 w-px bg-border mx-2" />
                 <div className="flex items-center gap-3">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.role}</p>
+                    <p className="text-sm font-bold leading-none">{user.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{user.role}</p>
                   </div>
-                  <Button variant="outline" size="icon" onClick={handleLogout} className="rounded-full">
+                  <Button variant="outline" size="icon" onClick={handleLogout} className="rounded-full hover:bg-destructive hover:text-destructive-foreground transition-colors">
                     <LogOut className="w-4 h-4" />
                   </Button>
                 </div>
               </>
             ) : (
               <Link href="/">
-                <Button variant="default" className="bg-primary hover:bg-primary/90">
+                <Button variant="default" className="bg-primary hover:bg-primary/90 font-bold">
                   Institutional Login
                 </Button>
               </Link>

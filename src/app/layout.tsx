@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 
 export const metadata: Metadata = {
-  title: 'PageVoyage | Institutional Visitor Management',
-  description: 'Streamlined visitor management for Library and Dean\'s Office.',
+  title: 'PageVoyage | New Era University Visitor Management',
+  description: 'Official Institutional Visitor Management & Appointment Tracking for New Era University.',
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased min-h-screen bg-background">
+      <body className="font-body antialiased min-h-screen bg-background text-foreground">
         <FirebaseClientProvider>
           {children}
           <Toaster />
