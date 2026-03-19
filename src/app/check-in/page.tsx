@@ -25,6 +25,8 @@ export default function CheckInPage() {
   
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [currentTimeStr, setCurrentTimeStr] = useState("");
   
   const [facility, setFacility] = useState<"Library" | "Dean's Office">("Library");
   const [formData, setFormData] = useState({
@@ -36,9 +38,18 @@ export default function CheckInPage() {
   });
 
   useEffect(() => {
+    setMounted(true);
+    setCurrentTimeStr(new Date().toLocaleTimeString());
+    
+    const timer = setInterval(() => {
+      setCurrentTimeStr(new Date().toLocaleTimeString());
+    }, 1000);
+
     const mu = getCurrentUser();
     if (!mu && !isUserLoading && !user) router.push("/");
     setMockUser(mu);
+
+    return () => clearInterval(timer);
   }, [user, isUserLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -227,9 +238,13 @@ export default function CheckInPage() {
                     >
                       {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Submit Check-in"}
                     </Button>
-                    <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>Current Time: {new Date().toLocaleTimeString()}</span>
+                    <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground min-h-[1.25rem]">
+                      {mounted && (
+                        <>
+                          <Clock className="w-3 h-3" />
+                          <span>Current Time: {currentTimeStr}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </form>
