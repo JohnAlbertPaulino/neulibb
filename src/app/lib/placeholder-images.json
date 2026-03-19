@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-campus",
+      "description": "A modern university campus lobby",
+      "imageUrl": "https://picsum.photos/seed/campus-lobby/1200/800",
+      "imageHint": "university campus"
+    },
+    {
+      "id": "library-view",
+      "description": "Quiet university library study area",
+      "imageUrl": "https://picsum.photos/seed/library/800/600",
+      "imageHint": "university library"
+    },
+    {
+      "id": "dean-office",
+      "description": "Professional administrative office setting",
+      "imageUrl": "https://picsum.photos/seed/office/800/600",
+      "imageHint": "dean office"
+    }
+  ]
+}
