@@ -1,45 +1,67 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Mail, ArrowRight } from "lucide-react";
+import { ShieldCheck, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { mockLogin } from "@/lib/auth-mock";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { useAuth, useUser } from "@/firebase";
+import { signInAnonymously, updateEmail } from "firebase/auth";
 
 export default function Home() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   
   const heroImg = PlaceHolderImages.find(img => img.id === 'hero-campus');
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      const role = user.email?.startsWith('admin') ? 'ADMIN' : 'VISITOR';
+      router.push(role === 'ADMIN' ? "/dashboard" : "/check-in");
+    }
+  }, [user, isUserLoading, router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.endsWith('@neu.edu.ph')) {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "Please use your institutional @neu.edu.ph email address.",
+      });
+      return;
+    }
+
     setLoading(true);
-    
-    setTimeout(() => {
-      const user = mockLogin(email);
-      if (user) {
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${user.name}!`,
-        });
-        router.push(user.role === 'ADMIN' ? "/dashboard" : "/check-in");
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: "Please use your institutional @neu.edu.ph email address.",
-        });
-      }
+    try {
+      // For demo purposes, we use anonymous sign-in and link the email
+      const cred = await signInAnonymously(auth);
+      // Mocking the user profile in our mock system too for role consistency
+      mockLogin(email);
+      
+      toast({
+        title: "Login Successful",
+        description: `Welcome to CampusFlow!`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: error.message,
+      });
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -85,9 +107,9 @@ export default function Home() {
                   <Button 
                     type="submit" 
                     className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg"
-                    disabled={loading}
+                    disabled={loading || isUserLoading}
                   >
-                    {loading ? "Authenticating..." : "Login with Google"}
+                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Login with Google"}
                     {!loading && <ArrowRight className="ml-2 w-5 h-5" />}
                   </Button>
                 </form>

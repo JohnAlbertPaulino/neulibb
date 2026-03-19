@@ -1,13 +1,15 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Library, Building, BarChart4, Filter, Search } from "lucide-react";
+import { Users, Library, Building, BarChart4, Filter, Search, Globe } from "lucide-react";
 import VisitorLog from "@/components/admin/VisitorLog";
 import UserManagement from "@/components/admin/UserManagement";
 import AIAnalytics from "@/components/admin/AIAnalytics";
+import ActiveSessions from "@/components/admin/ActiveSessions";
 import { Input } from "@/components/ui/input";
 import { getCurrentUser } from "@/lib/auth-mock";
 import { useRouter } from "next/navigation";
@@ -108,9 +110,12 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="log" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 max-w-md mx-auto sm:mx-0">
+          <TabsList className="grid w-full grid-cols-4 mb-8 max-w-xl mx-auto sm:mx-0">
             <TabsTrigger value="log" className="gap-2">
               <BarChart4 className="w-4 h-4" /> Activity Log
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="gap-2">
+              <Globe className="w-4 h-4" /> Active Sessions
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" /> User Mgmt
@@ -145,6 +150,10 @@ export default function AdminDashboard() {
               </div>
             </div>
             <VisitorLog visits={filteredVisits} onUpdateStatus={updateVisitStatus} />
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            <ActiveSessions />
           </TabsContent>
 
           <TabsContent value="users">

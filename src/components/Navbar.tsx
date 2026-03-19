@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -6,16 +7,20 @@ import { Button } from "@/components/ui/button";
 import { LogOut, LayoutDashboard, UserCheck, ShieldAlert } from "lucide-react";
 import { getCurrentUser, mockLogout } from "@/lib/auth-mock";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const auth = useAuth();
 
   useEffect(() => {
     setUser(getCurrentUser());
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut(auth);
     mockLogout();
     router.push("/");
   };
