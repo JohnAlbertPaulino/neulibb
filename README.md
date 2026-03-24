@@ -3,6 +3,8 @@
 PageVoyage is the official institutional visitor management and activity tracking platform for **New Era University (NEU)**. Designed to streamline campus traffic and provide administrative oversight, it leverages real-time synchronization and Generative AI to manage facility visits across the campus.
 neulibb.vercel.app
 
+**Live Application:** [Click here to view the app]([https://your-project-name.vercel.app)](https://neulibb.vercel.app/)
+
 ## 🚀 Key Features
 
 ### 🏢 Institutional Branding & Culture
